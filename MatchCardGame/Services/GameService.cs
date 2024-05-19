@@ -91,16 +91,27 @@
 
         private void PrintLeaderboard()
         {
-            Player winner = PlayerService.GetPlayers().OrderByDescending(x => x.Score).First();
-
             InputService.PrintMessage("Game Over!");
-            InputService.PrintMessage($"{winner.Name} wins the game with {winner.Score} points!");
-            InputService.PrintMessage("Leaderboard:");
 
+            if (PlayerService.GetPlayers()[0].Score == PlayerService.GetPlayers()[1].Score)
+            {
+                InputService.PrintMessage("It's a draw!");
+            } 
+            else
+            {
+                Player winner = PlayerService.GetPlayers().OrderByDescending(x => x.Score).First();
+
+                InputService.PrintMessage("Game Over!");
+                InputService.PrintMessage("We have a winner!");
+                InputService.PrintMessage($"{winner.Name} wins the game with {winner.Score} points!");
+            }
+
+            InputService.PrintMessage("Leaderboard:");
             foreach (Player player in PlayerService.GetPlayers())
             {
                 InputService.PrintMessage($"{player.Name}: {player.Score} points");
             }
+
         }
 
         #endregion Private Methods
