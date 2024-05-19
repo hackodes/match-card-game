@@ -64,13 +64,11 @@
 
             var gameService = new GameService(inputServiceMock.Object, deckServiceMock.Object, playerServiceMock.Object, cardServiceMock.Object, matchConditionServiceMock.Object);
 
-            // Mock the pile to have at least 2 cards
             var pile = new List<Card> { new Card(10, Suit.Hearts), new Card(10, Suit.Clubs) };
             cardServiceMock.Setup(x => x.AddCard(It.IsAny<Card>()));
             cardServiceMock.Setup(x => x.GetPileCount()).Returns(pile.Count);
             cardServiceMock.Setup(x => x.GetPile()).Returns(pile);
 
-            // Set up match condition to return true
             cardServiceMock.Setup(x => x.IsMatch(pile[0], MatchCondition.ValueMatch, pile[1])).Returns(true);
 
             // Act
@@ -104,7 +102,6 @@
 
             var gameService = new GameService(inputServiceMock.Object, deckServiceMock.Object, playerServiceMock.Object, cardServiceMock.Object, matchConditionServiceMock.Object);
 
-            // Mock the pile to have at least 2 cards
             var pile = new List<Card> { new Card(10, Suit.Hearts), new Card(10, Suit.Clubs) };
             cardServiceMock.Setup(x => x.GetPileCount()).Returns(pile.Count);
             cardServiceMock.Setup(x => x.GetPile()).Returns(pile);
@@ -114,7 +111,6 @@
                 .Returns(new Card(10, Suit.Hearts))
                 .Returns((Card?)null);
 
-            // Set up match condition to return true
             cardServiceMock.Setup(x => x.IsMatch(pile[0], MatchCondition.SuitMatch, pile[1])).Returns(true);
 
             // Act
@@ -124,6 +120,50 @@
             deckServiceMock.Verify(x => x.GetTotalCards(), Times.Exactly(3));
             deckServiceMock.Verify(x => x.DrawCard(), Times.Exactly(4));
             inputServiceMock.Verify(x => x.PrintMessage("No more cards in the deck."), Times.AtLeastOnce());
+            inputServiceMock.Verify(x => x.PrintMessage("It's a draw!"), Times.Once);
+        }
+
+        [Fact]
+        public void Play_WhenPlayerOneHasHigherScore_ShouldWinGame()
+        {
+            // Arrange
+            var playerServiceMock = new Mock<IPlayerService>();
+            var players = new[] { new Player("Player 1"), new Player("Player 2") };
+            players[0].Score = 5;
+            playerServiceMock.Setup(x => x.GetPlayers()).Returns(players);
+
+
+            var deckServiceMock = new Mock<IDeckService>();
+            deckServiceMock.SetupSequence(x => x.GetTotalCards())
+                .Returns(2)
+                .Returns(1)
+                .Returns(0);
+
+            var matchConditionServiceMock = new Mock<IMatchConditionService>();
+            var cardServiceMock = new Mock<ICardService>();
+            var inputServiceMock = new Mock<IInputService>();
+
+            var gameService = new GameService(inputServiceMock.Object, deckServiceMock.Object, playerServiceMock.Object, cardServiceMock.Object, matchConditionServiceMock.Object);
+
+            var pile = new List<Card> { new Card(10, Suit.Hearts), new Card(10, Suit.Clubs) };
+            cardServiceMock.Setup(x => x.GetPileCount()).Returns(pile.Count);
+            cardServiceMock.Setup(x => x.GetPile()).Returns(pile);
+            cardServiceMock.Setup(x => x.IsMatch(pile[0], MatchCondition.SuitMatch, pile[1])).Returns(true);
+
+            deckServiceMock.SetupSequence(deckServiceMock => deckServiceMock.DrawCard())
+                .Returns(new Card(10, Suit.Hearts))
+                .Returns((Card?)null);
+
+            cardServiceMock.Setup(x => x.IsMatch(pile[0], MatchCondition.SuitMatch, pile[1])).Returns(true);
+
+            // Act
+            gameService.Play();
+
+            // Assert
+            deckServiceMock.Verify(x => x.GetTotalCards(), Times.Exactly(3));
+            deckServiceMock.Verify(x => x.DrawCard(), Times.Exactly(4));
+            inputServiceMock.Verify(x => x.PrintMessage("No more cards in the deck."), Times.AtLeastOnce());
+            inputServiceMock.Verify(x => x.PrintMessage("We have a winner!"));
         }
     }
 }
